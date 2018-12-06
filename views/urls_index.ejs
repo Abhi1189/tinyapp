@@ -5,12 +5,18 @@
     </head>
 
     <body>
+        
         <header>
             <% include ./partials/_header %>
         </header>
         <ul>
+        
         <% for(let key in urls) { %>
-            <li><%= key %> - <%= urls[key] %></li>
+            <li><%= key %> - <%= urls[key] %></li> 
+            <form method="POST" action="/urls/<%= key %>/delete">
+                <button type="submit"> DELETE &#128465</button>
+                <a href="/urls/<%= key %>">Edit</a>
+            </form>
         <% } %>
         </ul>
         <a href="/urls/new">Shorten the URL here..</a>
