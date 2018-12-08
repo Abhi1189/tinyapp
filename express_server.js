@@ -54,7 +54,12 @@ app.get('/urls/new', (req, res) => {
     let templateVars = {
         user: users[req.cookies['user_id']]
     }
-    res.render('urls_new', templateVars);
+    if(templateVars.user){
+        res.render('urls_new', templateVars);
+    } else {
+        res.redirect('/login');
+    }
+    
 });
 
 //GET request to /register
@@ -176,15 +181,6 @@ app.get('/urls/:id', (req, res) => {
     res.render('urls_show', templateVars);
 });
 
-
-
-app.get("/urls/new", (req, res) => {
-    res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-    res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
 
 app.get("/", (req, res) => {
   res.send("Hello!");
