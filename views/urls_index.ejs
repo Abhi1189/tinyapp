@@ -12,14 +12,20 @@
         <ul>
         
         <% for(let key in urls) { %>
-            <li><%= key %> - <%= urls[key] %></li> 
-            <form method="POST" action="/urls/<%= key %>/delete">
-                <button type="submit"> DELETE &#128465</button>
+            <% if(urls[key].userID === cookie) { %>
+                
+                <li><a href="<%= urls[key].longURL %>"> <%= key %></a> - <%= urls[key].longURL %></li> 
+                <form method="POST" action="/urls/<%= key %>/delete">
+                    <button type="submit"> DELETE &#128465</button>
                 <a href="/urls/<%= key %>">Edit</a>
-            </form>
+                </form>
+            <% } else { %>
+                <!-- Short Urls -->
+                <li><a href="<%= urls[key].longURL %>"><%= key %></a></li>
+            <% } %>
         <% } %>
         </ul>
-        <a href="/urls/new">Shorten the URL here..</a>
+        <li><a href="/urls/new">Shorten the URL here..</a></li>
     
     </body>
 </html>
