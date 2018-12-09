@@ -2,7 +2,7 @@ var express = require("express");
 var app = express();
 var PORT = 8080; // default port 8080
 
-var cookieSession = require('cookie-session')
+var cookieSession = require('cookie-session');
 var cookieParser = require('cookie-parser');
 app.set('view engine', 'ejs');
 
@@ -19,6 +19,7 @@ const bcrypt = require('bcrypt');
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
+//hardcoded database.. acts as direction when adding new urls..
 var urlDatabase = {
     "b2xVn2": {
         longURL: "http://www.lighthouselabs.ca",
@@ -33,12 +34,14 @@ var urlDatabase = {
 
 };
 
+//our user database
 const users = { 
     "userRandomID": {
       id: "userRandomID", 
       email: "user@example.com", 
       password: "purple-monkey-dinosaur"
     },
+
    "user2RandomID": {
       id: "user2RandomID", 
       email: "user2@example.com", 
@@ -59,8 +62,10 @@ function findUserByEmail(email){
     return false;
 }
 
+//rendering the index page with the conditions.
 app.get('/urls', (req, res) => {
     let cookie = req.session.user_id;
+    //helped by Nick here. 
     if(!cookie){
         cookie = null;
     }
@@ -80,24 +85,25 @@ app.post('/urls', (req, res) => {
     //function returns generated short string/shortURL
     let shortURL = generateRandomString();
 
-    //if(formfield)== add a new URL
+    //if(formfield) => add a new URL
     if(longURL){
         
         urlDatabase[shortURL] = {
             longURL: longURL,
             userID: req.session.user_id
     };
-    console.log(urlDatabase);
-    //redirection....
+
     res.redirect('/urls/' + shortURL);
     }
 });
 
+//rendering the newURL page..
 app.get('/urls/new', (req, res) => {
     let templateVars = {
+        //read cookie as it's a userID
         user: users[req.session.user_id]
     }
-    if(templateVars.user){
+    if(templateVars.user){ //if user is logged in 
         res.render('urls_new', templateVars);
     } else {
         res.redirect('/login');
@@ -105,8 +111,7 @@ app.get('/urls/new', (req, res) => {
     
 });
 
-//GET request to /register
-//just show the /register page....
+//rendering the registration page..
 app.get('/register', (req, res) => {
     res.render('register');
 });
@@ -115,6 +120,9 @@ app.get('/register', (req, res) => {
 app.post('/register', (req, res) => {
     let email = req.body.email;
     let password = req.body.password;
+
+    //Hashed password using bcrypt library.
+    //second argument in the function represents the hashing rate.
     let hashPass = bcrypt.hashSync(password, 10);
 
     // let userExists = findUserByEmail(email);
@@ -123,21 +131,20 @@ app.post('/register', (req, res) => {
     } else if(findUserByEmail(email)) {
         res.sendStatus(400);
     } else {
+        //create new user
         let id = generateRandomString();
+        //format of our new user.
         let newUser = {
             id,
             email,
             hashPass
         };
-        console.log(hashPass);
+        //push new new user object into our users object database.
         users[id] = newUser;
+        //set the session cookie
         req.session.user_id = id;
-        // console.log('coooooo:', req.session.user_id);
-        // res.cookie('user_id', id);
         res.redirect('/urls');
     }
-    console.log(users);
-    
 });
 
 
@@ -152,8 +159,11 @@ app.post('/login', (req, res) => {
     //display the contents of the form field
     let email = req.body.email;
     let password = req.body.password;
+
+    //validates if user exists =  goodUser
     let goodUser = findUserByEmail(email);
-    if(email === "" || password === ""){
+    
+    if(email === "" || password === ""){ 
         res.status(403).send("I need both, email and a password.  <3");
     } else if (!goodUser) {
         // no such user you dumb shit
@@ -167,10 +177,6 @@ app.post('/login', (req, res) => {
         // res.cookie('user_id', goodUser.id);
         res.redirect('/');
     }
-
-
-    //set a cookie by the name of 'user_id' using express..
-    
     
     //redirecting to '/urls' link..
     res.redirect('/urls');
@@ -178,28 +184,33 @@ app.post('/login', (req, res) => {
 
 //post route to /logout
 app.post('/logout', (req, res) => {
-    // res.clearCookie("user_id"); //clear the damn cookie
+    //clear the damn cookies 
     res.clearCookie("session");
     res.clearCookie("session.sig");
+
+    //destroy the session
     res.session = null;
+
     //redirection after that
     res.redirect('/urls');
 });
 
 app.post('/urls/:shortURL/update', (req, res) => {
     let shortURL = req.params.shortURL;
-    console.log(shortURL);
+    
+    //update a shortURL..
     urlDatabase[shortURL].longURL = req.body.longURL;
-    console.log(urlDatabase[shortURL].longURL);
+    
     res.redirect('/urls');
 });
 
 app.post("/urls/:id/delete", (req, res) => {
+    //delete and entry from our database when user clicks delete.
     delete urlDatabase[req.params.id];
     res.redirect('/urls');
 });
 
-//redirection to longURL whenever access to /u/:shortURL is requested 
+//redirection to longURL whenever this request is made 
 app.get("/u/:shortURL", (req, res) => {
     let shortURL = req.params.shortURL;
     let longURL = urlDatabase[shortURL].longURL;
@@ -208,6 +219,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 
 app.get('/urls/:id', (req, res) => {
+    //if cookie exists.. user logged in..
     if(req.session.user_id){
         let templateVars = {
             shortURL: req.params.id,
